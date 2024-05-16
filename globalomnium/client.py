@@ -168,8 +168,8 @@ class Client:
         login_payload = "login="+ self.username +"&pass="+ self.password + "&remember=true" + "&suministro="
 
 
-        #data = await self.request_json("POST", _LOGIN_ENDPOINT, data=login_payload) #cambiar entre request_json y _request
-        data = await self._request("POST", _LOGIN_ENDPOINT, data=login_payload) #cambiar entre request_json y _request
+        data = await self.request_json("POST", _LOGIN_ENDPOINT, data=login_payload) #cambiar entre request_json y _request
+        #data = await self._request("POST", _LOGIN_ENDPOINT, data=login_payload) #cambiar entre request_json y _request
         if not isinstance(data, dict):
             raise InvalidData(data)
 
@@ -407,8 +407,8 @@ class Client:
         start_yesterday = (datetime.now() - timedelta(days=1)).strftime("%d/%m/%Y")
         payload = f"start={start_yesterday}&end={end_today}"
 
-       # data = await self.request_json("GET", _MEASURE_ENDPOINT, data=payload) #cambiar entre request_json y _request
-        data = await self._request("GET", _MEASURE_ENDPOINT, data=payload) #cambiar entre request_json y _request
+        data = await self.request_json("GET", _MEASURE_ENDPOINT, data=payload) #cambiar entre request_json y _request
+        #data = await self._request("GET", _MEASURE_ENDPOINT, data=payload) #cambiar entre request_json y _request
 
         self._logger.debug(f"Got reply, raw data: {data!r}")
 

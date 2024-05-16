@@ -38,7 +38,8 @@ def read_fixture(fixture_name: str):
 class TestClient(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.sess = await get_session()
-        self.client = Client(None, "x", "y")
+        #self.client = Client(None, "x", "y")
+        self.client = Client(self.sess, "x", "y") 
         self.end = datetime.now().replace(hour=0, minute=0, second=0)
         self.start = self.end - timedelta(days=7)
 
@@ -69,23 +70,6 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
 
             self.assertEqual(ret["accumulated"], 97871.0)
             #self.assertEqual(ret["accumulated-co2"], 23586.91)
-
-#    @patch("globalomnium.Client.is_logged", return_value=True)
-#     async def test_historical_power_demand(self, _):
-#        with patch(
-#            "globalomnium.Client.request_bytes",
-#            new_class=AsyncMock,
-#            side_effect=[
-#                read_fixture("historical-power-demand-limits"),
-#                read_fixture("historical-power-demand"),
-#            ],
-#        ):
-#            ret = await self.client.get_historical_power_demand()
-#
-#            self.assertEqual(len(ret), 50)
-#            self.assertEqual(
-#                ret[25], {"dt": datetime(2022, 5, 28, 22, 15), "value": 2816.0}
-#            )
 
 
 if __name__ == "__main__":
