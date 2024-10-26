@@ -9,7 +9,7 @@
             "module": "globalomnium",
             "justMyCode": false,
             "env": {
-                "PYTHONPATH": "/globalomnium"
+                "PYTHONPATH": "/globalomnium/globalomnium"
             }
         },
         {
@@ -19,7 +19,7 @@
             "program": "${file}",
             "justMyCode": false,
             "env": {
-                "PYTHONPATH": "/globalomnium"
+                "PYTHONPATH": "/globalomnium/globalomnium"
             }
         }
     ]

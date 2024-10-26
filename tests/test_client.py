@@ -24,7 +24,7 @@ import unittest
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
-from globalomnium import Client, get_session
+from globalomnium import Client, get_session, get_credentials
 from globalomnium.client import _LOGIN_ENDPOINT
 
 FIXTURES_DIR = os.path.dirname(__file__) + "/fixtures"
@@ -37,9 +37,10 @@ def read_fixture(fixture_name: str):
 
 class TestClient(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
+        u, p = get_credentials(credentials="credentials.json")
         self.sess = await get_session()
-        #self.client = Client(None, "x", "y")
-        self.client = Client(self.sess, "x", "y") 
+        self.client = Client(None, u, p)
+        #self.client = Client(self.sess, u, p) 
         self.end = datetime.now().replace(hour=0, minute=0, second=0)
         self.start = self.end - timedelta(days=7)
 

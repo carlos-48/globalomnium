@@ -22,6 +22,7 @@ import dataclasses
 import functools
 import json
 import logging
+import locale
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
@@ -168,8 +169,7 @@ class Client:
         login_payload = "login="+ self.username +"&pass="+ self.password + "&remember=true" + "&suministro="
 
 
-        data = await self.request_json("POST", _LOGIN_ENDPOINT, data=login_payload) #cambiar entre request_json y _request
-        #data = await self._request("POST", _LOGIN_ENDPOINT, data=login_payload) #cambiar entre request_json y _request
+        data = await self.request_json("POST", _LOGIN_ENDPOINT, data=login_payload) 
         if not isinstance(data, dict):
             raise InvalidData(data)
 
@@ -179,8 +179,9 @@ class Client:
         self._login_ts = datetime.now()
 
     # Desconozco como está funcionando la parte de los contratos así que la comento para descartar errores
-    #    if self._contract:
-    #        await self.select_contract(self._contract)
+    # descomento para probar mejor, creo que ya lo tengo bien
+        if self._contract:
+            await self.select_contract(self._contract)
 
         self._logger.info(f"{self}: successful authentication")
 
@@ -297,10 +298,14 @@ class Client:
                     u003c!-- FIN / MODAL Suministro --\u003e"
         }
         """
-        data = await self.request_json("GET", _CONTRACT_DETAILS_ENDPOINT)
-        if not data.get("codContrato", False):
-            raise InvalidData(data)
-
+        contract_payload="code="+ self._contract
+        data = await self.request_json("POST", _CONTRACT_DETAILS_ENDPOINT,json=contract_payload)
+        if data.get("result", "false") != True:
+            raise CommandError(data)
+        # Comento esta comprobacion porque he añadido la anterior en su lugar, ya que la respuesta no está en formato json
+        # if not data.get("codSuministro", False):
+        #     raise InvalidData(data)
+        
         return data
 
     @auth_required
@@ -322,7 +327,7 @@ class Client:
         current_timestamp = int(datetime.now().timestamp() * 1000)
         json_payload = json.dumps({"order": "asc", "_": str(current_timestamp)})
         data = await self.request_json("GET", _CONTRACTS_ENDPOINT, json=json_payload) #no tengo claro si hay que usar json= o data= en los argumentos
-        if not data.get("result", False):
+        if not data.get("data", False):
             raise CommandError(data)
 
         try:
@@ -331,17 +336,32 @@ class Client:
         except KeyError:
             raise InvalidData(data)
 
-# Desconozco como está funcionando la parte de los contratos así que la comento para descartar errores
-#    @auth_required
-#    async def select_contract(self, id: str) -> None:
-#        resp = await self.request_json(
-#            "GET", _CONTRACT_SELECTION_ENDPOINT + id
-#        )  # para GO utiliza el Payload suministro=abcd124.....
-#        if not resp.get("result", False):
-#            raise InvalidContractError(id)
-#
-#        self._contract = id
-#        self._logger.info(f"{self}: '{id}' contract selected")
+# Desconozco como está funcionando la parte de los contratos porque no tengo varios, solo tengo uno y no puedo probar.
+    @auth_required
+    async def select_contract(self, contract_code: str) -> None:
+        '''
+         {
+        "success": True, 
+        "encryptionValue": "AK5WDYDCx5cRX0dztAD/+KYXJDc1sDquPOmWgGPyVcax08PV2QSGY6ErFytYSjM/",
+        "encryptionKey": "preselGO02",
+        "error": "Ha habido un error. Por favor inténtelo de nuevo más tarde"
+        }
+        {
+        'success': False, 
+        'encryptionValue': '', 
+        'encryptionKey': '', 
+        'error': 'Ha habido un error. Por favor inténtelo de nuevo más tarde'
+        }
+        '''
+
+
+        contract_payload = json.dumps({"suministro": contract_code})
+        resp = await self.request_json("POST", _CONTRACT_SELECTION_ENDPOINT, json=contract_payload)
+        if resp.get("succes", False):
+            raise InvalidContractError(contract_code)
+
+        self._contract = contract_code
+        self._logger.info(f"{self}: '{contract_code}' contract selected")
 
     @auth_required
     async def get_measure(self) -> Measure:
@@ -413,13 +433,10 @@ class Client:
         self._logger.debug(f"Got reply, raw data: {data!r}")
 
         try:
+
             measure = Measure(
-                accumulate=int(
-                    data["table"][-1]["Lectura"]
-                ),  # accedo solo al último elemento para la lectura "instantanea"
-                instant=float(
-                    data["table"][-1]["Consumo"]
-                ),  # accedo solo al último elemento para la lectura "instantanea"
+                accumulate=parsers.convert_str_comma_to_float(data["table"][-1]["Lectura"]),  # accedo solo al último elemento para la lectura "instantanea"
+                instant=parsers.convert_str_comma_to_float(data["table"][-1]["Consumo"]),  # accedo solo al último elemento para la lectura "instantanea"
             )
 
         except (KeyError, ValueError) as e:
