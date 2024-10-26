@@ -22,6 +22,7 @@ import dataclasses
 import functools
 import json
 import logging
+import locale
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
@@ -322,7 +323,7 @@ class Client:
         current_timestamp = int(datetime.now().timestamp() * 1000)
         json_payload = json.dumps({"order": "asc", "_": str(current_timestamp)})
         data = await self.request_json("GET", _CONTRACTS_ENDPOINT, json=json_payload) #no tengo claro si hay que usar json= o data= en los argumentos
-        if not data.get("result", False):
+        if not data.get("data", False):
             raise CommandError(data)
 
         try:
@@ -332,16 +333,16 @@ class Client:
             raise InvalidData(data)
 
 # Desconozco como está funcionando la parte de los contratos así que la comento para descartar errores
-#    @auth_required
-#    async def select_contract(self, id: str) -> None:
-#        resp = await self.request_json(
-#            "GET", _CONTRACT_SELECTION_ENDPOINT + id
-#        )  # para GO utiliza el Payload suministro=abcd124.....
-#        if not resp.get("result", False):
-#            raise InvalidContractError(id)
-#
-#        self._contract = id
-#        self._logger.info(f"{self}: '{id}' contract selected")
+    @auth_required
+    async def select_contract(self, id: str) -> None:
+        resp = await self.request_json(
+            "GET", _CONTRACT_SELECTION_ENDPOINT + id
+        )  # para GO utiliza el Payload suministro=abcd124.....
+        if not resp.get("data", False):
+            raise InvalidContractError(id)
+
+        self._contract = id
+        self._logger.info(f"{self}: '{id}' contract selected")
 
     @auth_required
     async def get_measure(self) -> Measure:
@@ -413,13 +414,10 @@ class Client:
         self._logger.debug(f"Got reply, raw data: {data!r}")
 
         try:
+
             measure = Measure(
-                accumulate=int(
-                    data["table"][-1]["Lectura"]
-                ),  # accedo solo al último elemento para la lectura "instantanea"
-                instant=float(
-                    data["table"][-1]["Consumo"]
-                ),  # accedo solo al último elemento para la lectura "instantanea"
+                accumulate=parsers.convert_str_comma_to_float(data["table"][-1]["Lectura"]),  # accedo solo al último elemento para la lectura "instantanea"
+                instant=parsers.convert_str_comma_to_float(data["table"][-1]["Consumo"]),  # accedo solo al último elemento para la lectura "instantanea"
             )
 
         except (KeyError, ValueError) as e:

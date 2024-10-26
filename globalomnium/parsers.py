@@ -20,6 +20,7 @@
 
 # import itertools
 import re
+import locale
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
@@ -60,7 +61,7 @@ def parse_historical_consumption(data) -> HistoricalConsumption:
     # def list_to_dict(values, keys):
     #    return {keys[idx]: values[idx] for idx in range(len(values))}
 
-    # CORREGIR, YA QUE EN GO EXISTE EL CAMPO FECHA DESDE PERO ESTA EN BLANCO, ESTA LA FEHA EN UN CAMPO STRING QUE HAY QUE DECODIFICAR
+    # CORREGIR, YA QUE EN GO EXISTE EL CAMPO FECHA DESDE PERO ESTA EN BLANCO, ESTA LA FECHA EN UN CAMPO STRING QUE HAY QUE DECODIFICAR
     timestamp_matches = re.findall(r'\d+', data["table"][0]["Fecha"])
     timestamp = int(timestamp_matches[0]) // 1000
     start = datetime.fromtimestamp(timestamp)
@@ -68,17 +69,20 @@ def parse_historical_consumption(data) -> HistoricalConsumption:
 
     # period_names = table[0]["Periodo"]
 
+
     ret = HistoricalConsumption(
-        total=data["table"][0]["Lectura"],
+        # total=convert_str_comma_to_float(data["table"][-1]["Lectura"]), #¿es el total para todo el periodo entre fechas? ¿o el acumulado en cada fecha?
+        total=round(convert_str_comma_to_float(data["table"][-1]["Lectura"])-convert_str_comma_to_float(data["table"][0]["Lectura"]),3), #¿es el total para todo el periodo entre fechas? ¿o el acumulado en cada fecha?
         # desglosed=list_to_dict(data[0]["totalesPeriodosTarifarios"], period_names),
     )
 
-    for idx, value in enumerate(data["table"][0]["Lectura"]):
+    for idx,value in enumerate(data["table"]):
         ret.consumptions.append(
             ConsumptionForPeriod(
                 start=start + timedelta(hours=idx),
                 end=start + timedelta(hours=idx + 1),
-                value=value,
+                #value=convert_str_comma_to_float(value["Lectura"]),
+                value=convert_str_comma_to_float(value["Consumo"])/1000,   
                 # desglosed=list_to_dict(
                 #     data[0]["valoresPeriodosTarifarios"][idx], period_names
                 # ),
@@ -100,3 +104,8 @@ def parse_historical_consumption(data) -> HistoricalConsumption:
 #     potMaxMens = [_normalize_item(x) for x in potMaxMens]
 #
 #    return potMaxMens
+
+def convert_str_comma_to_float(string:str) -> float:
+    decimal_separator = locale.localeconv()["decimal_point"]
+    return round(float(string.replace(",", decimal_separator)),3)
+    

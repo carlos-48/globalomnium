@@ -26,7 +26,7 @@ import pprint
 import sys
 from datetime import datetime, timedelta
 
-from . import Client, RequestFailedError, get_credentials, get_session
+from globalomnium import Client, RequestFailedError, get_credentials, get_session
 
 
 def build_arg_parser():

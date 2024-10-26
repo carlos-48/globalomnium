@@ -13,11 +13,12 @@ class PeriodValue:
 
 @dataclass
 class ConsumptionForPeriod(PeriodValue):
-    desglosed: Dict[str, float] = field(default_factory=dict)
+    pass
+    # desglosed: Dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
 class HistoricalConsumption:
     consumptions: List[ConsumptionForPeriod] = field(default_factory=list)
     total: float = 0
-    desglosed: Dict[str, float] = field(default_factory=dict)
+    # desglosed: Dict[str, float] = field(default_factory=dict)
