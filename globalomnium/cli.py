@@ -50,7 +50,7 @@ async def main():
     async def _main():
         if args.list_contracts:
             contracts = await client.get_contracts()
-            contracts = {x["referencia"]: x for x in contracts}
+            contracts = {x["referencia"]: x for x in contracts} #debe buscar referencia? no, creo que es el código largo que va cambiando
             return contracts
 
         if args.contract:
